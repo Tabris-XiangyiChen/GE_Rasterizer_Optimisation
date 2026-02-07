@@ -1,7 +1,8 @@
 ﻿#pragma once
 
 #include "mesh.h"
-#include "colour.h"
+//#include "colour.h"
+#include "Types.h"
 #include "renderer.h"
 #include "light.h"
 #include <iostream>
@@ -65,24 +66,24 @@ public:
     // Constructor initializes the triangle with three vertices
     // Input Variables:
     // - v1, v2, v3: Vertices defining the triangle
-    //triangle(const Vertex& v1, const Vertex& v2, const Vertex& v3) {
-    //    v[0] = v1;
-    //    v[1] = v2;
-    //    v[2] = v3;
-    //    // Calculate the 2D area of the triangle
-    //    vec2D e1 = vec2D(v[1].p - v[0].p);
-    //    vec2D e2 = vec2D(v[2].p - v[0].p);
-    //    area = std::fabs(e1.x * e2.y - e1.y * e2.x);
-    //}
-    //Opt: 
     triangle(const Vertex& v1, const Vertex& v2, const Vertex& v3) {
         v[0] = v1;
         v[1] = v2;
         v[2] = v3;
         // Calculate the 2D area of the triangle
-        area = std::fabs((v[1].p[0] - v[0].p[0]) * (v[2].p[1] - v[0].p[1])
-            - (v[1].p[1] - v[0].p[1]) * (v[2].p[0] - v[0].p[0]));
+        vec2D e1 = vec2D(v[1].p - v[0].p);
+        vec2D e2 = vec2D(v[2].p - v[0].p);
+        area = std::fabs(e1.x * e2.y - e1.y * e2.x);
     }
+    //Opt: 
+    //triangle(const Vertex& v1, const Vertex& v2, const Vertex& v3) {
+    //    v[0] = v1;
+    //    v[1] = v2;
+    //    v[2] = v3;
+    //    // Calculate the 2D area of the triangle
+    //    area = std::fabs((v[1].p[0] - v[0].p[0]) * (v[2].p[1] - v[0].p[1])
+    //        - (v[1].p[1] - v[0].p[1]) * (v[2].p[0] - v[0].p[0]));
+    //}
 
     // Helper function to compute the cross product for barycentric coordinates
     // Input Variables:
@@ -164,7 +165,7 @@ public:
                     // Perform Z-buffer test and apply shading
                     if (renderer.zbuffer(x, y) > depth && depth > 0.001f) {
                         // typical shader begin
-                        //L.omega_i.normalise();
+                        L.omega_i.normalise();
                         float dot = std::max(vec4::dot(L.omega_i, normal), 0.0f);
                         colour a = (c * kd) * (L.L * dot) + (L.ambient * ka); // using kd instead of ka for ambient
                         // typical shader end

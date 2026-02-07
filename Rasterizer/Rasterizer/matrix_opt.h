@@ -46,8 +46,6 @@ struct Matrix_Mul_Scalar {
     }
 };
 
-
-
 struct Matrix_Mul_SIMD {
     static inline void mul(MatData& out, const MatData& A, const MatData& B) {
         __m128 b0 = _mm_load_ps(&B.a[0]);
@@ -102,12 +100,11 @@ struct Matrix_Mul_SIMD_DP {
 
     // SSE matrix * vector using _mm_dp_ps
     static inline void mul(vec4& out, const MatData& A, const vec4& v) {
-        __m128 vec = _mm_load_ps(&v[0]); // [v0 v1 v2 v3]
+        __m128 vec = _mm_load_ps(&v[0]);
 
         for (int row = 0; row < 4; ++row) {
             __m128 matRow = _mm_load_ps(&A.a[row * 4]); // load row
 
-            // SSE4.1 dot product: dp of 4 elements -> result in lowest float
             __m128 dp = _mm_dp_ps(matRow, vec, 0xF1); // mask 0xF1: multiply all, store in lowest
             out[row] = _mm_cvtss_f32(dp);            // extract lowest float
         }

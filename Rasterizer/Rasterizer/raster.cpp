@@ -9,7 +9,7 @@
 #include <cmath>
 //#include "matrix.h"
 #include "Types.h"
-#include "colour.h"
+//#include "colour.h"
 #include "mesh.h"
 #include "renderer.h"
 #include "RNG.h"
@@ -172,12 +172,7 @@ void render_transfirst(Renderer& renderer, Mesh* mesh, matrix& camera, Light& L,
         vec4& v2_view = view_positions[ind.v[2]];
         vec4 e1 = v1_view - v0_view;
         vec4 e2 = v2_view - v0_view;
-        vec4 view_normal(
-            e1[1] * e2[2] - e1[2] * e2[1],  // x
-            e1[2] * e2[0] - e1[0] * e2[2],  // y  
-            e1[0] * e2[1] - e1[1] * e2[0],  // z
-            0.0f
-        );
+        vec4 view_normal = vec4::cross(e1, e2);
         if (vec4::dot(view_normal, -v0_view) >= 0.0f)
             continue;
         // clip
@@ -612,7 +607,8 @@ void scene1(bool if_trans_first = false, bool if_AVX = false) {
             step *= -1.f;
             if (++cycle % 2 == 0) {
                 end = std::chrono::high_resolution_clock::now();
-                std::cout << cycle / 2 << " :" << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
+                //std::cout << cycle / 2 << " :" << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
+                std::cout << std::chrono::duration<double, std::milli>(end - start).count() << "\n";
                 start = std::chrono::high_resolution_clock::now();
             }
         }
@@ -689,7 +685,8 @@ void scene1_SoA(bool if_trans_first = false, bool if_AVX = false, bool if_AVX_at
             step *= -1.f;
             if (++cycle % 2 == 0) {
                 end = std::chrono::high_resolution_clock::now();
-                std::cout << cycle / 2 << " :" << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
+                //std::cout << cycle / 2 << " :" << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
+                std::cout << std::chrono::duration<double, std::milli>(end - start).count() << "\n";
                 start = std::chrono::high_resolution_clock::now();
             }
         }
@@ -725,16 +722,16 @@ void scene1_SoA(bool if_trans_first = false, bool if_AVX = false, bool if_AVX_at
         delete m;
 }
 
-void scene1_SoA_MT() {
+void scene1_SoA_MT(int thread_num) {
     Renderer renderer;
     matrix camera;
     Light L{ vec4(0.f, 1.f, 1.f, 0.f), colour(1.0f, 1.0f, 1.0f), colour(0.2f, 0.2f, 0.2f) };
     // Opt:
     L.omega_i.normalise();
 
-    ThreadPool threads;
+    ThreadPool threads(thread_num);
     //RendererSOA_MT renderer_mt(renderer.canvas.getWidth(), renderer.canvas.getHeight(), std::thread::hardware_concurrency());
-    RendererSOA_MT renderer_mt(renderer.canvas.getWidth(), renderer.canvas.getHeight());
+    RendererSOA_MT renderer_mt(renderer.canvas.getWidth(), renderer.canvas.getHeight(), threads);
 
 
     bool running = true;
@@ -778,7 +775,8 @@ void scene1_SoA_MT() {
             step *= -1.f;
             if (++cycle % 2 == 0) {
                 end = std::chrono::high_resolution_clock::now();
-                std::cout << cycle / 2 << " :" << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
+                //std::cout << cycle / 2 << " :" << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
+                std::cout << std::chrono::duration<double, std::milli>(end - start).count() << "\n";
                 start = std::chrono::high_resolution_clock::now();
             }
         }
@@ -854,7 +852,8 @@ void scene2(bool if_trans_first = false, bool if_AVX = false) {
             sphereStep *= -1.f;
             if (++cycle % 2 == 0) {
                 end = std::chrono::high_resolution_clock::now();
-                std::cout << cycle / 2 << " :" << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
+                //std::cout << cycle / 2 << " :" << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
+                std::cout << std::chrono::duration<double, std::milli>(end - start).count() << "\n";
                 start = std::chrono::high_resolution_clock::now();
             }
         }
@@ -940,7 +939,8 @@ void scene2_SoA(bool if_trans_first = false, bool if_AVX = false, bool if_AVX_at
             sphereStep *= -1.f;
             if (++cycle % 2 == 0) {
                 end = std::chrono::high_resolution_clock::now();
-                std::cout << cycle / 2 << " :" << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
+                //std::cout << cycle / 2 << " :" << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
+                std::cout << std::chrono::duration<double, std::milli>(end - start).count() << "\n";
                 start = std::chrono::high_resolution_clock::now();
             }
         }
@@ -976,7 +976,7 @@ void scene2_SoA(bool if_trans_first = false, bool if_AVX = false, bool if_AVX_at
     for (auto& m : scene)
         delete m;
 }
-void scene2_SoA_MT(bool if_trans_first = false, bool if_AVX = false, bool if_AVX_at_transf = false) {
+void scene2_SoA_MT(int thread_num) {
     Renderer renderer;
     matrix camera = matrix::makeIdentity();
     Light L{ vec4(0.f, 1.f, 1.f, 0.f), colour(1.0f, 1.0f, 1.0f), colour(0.2f, 0.2f, 0.2f) };
@@ -985,8 +985,8 @@ void scene2_SoA_MT(bool if_trans_first = false, bool if_AVX = false, bool if_AVX
 
     std::vector<Mesh_SoA*> scene;
 
-    ThreadPool threads;
-    RendererSOA_MT renderer_mt(renderer.canvas.getWidth(), renderer.canvas.getHeight());
+    ThreadPool threads(thread_num);
+    RendererSOA_MT renderer_mt(renderer.canvas.getWidth(), renderer.canvas.getHeight(), threads);
 
     struct rRot { float x; float y; float z; }; // Structure to store random rotation parameters
     std::vector<rRot> rotations;
@@ -1033,7 +1033,8 @@ void scene2_SoA_MT(bool if_trans_first = false, bool if_AVX = false, bool if_AVX
             sphereStep *= -1.f;
             if (++cycle % 2 == 0) {
                 end = std::chrono::high_resolution_clock::now();
-                std::cout << cycle / 2 << " :" << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
+                //std::cout << cycle / 2 << " :" << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
+                std::cout << std::chrono::duration<double, std::milli>(end - start).count() << "\n";
                 start = std::chrono::high_resolution_clock::now();
             }
         }
@@ -1053,181 +1054,7 @@ void scene2_SoA_MT(bool if_trans_first = false, bool if_AVX = false, bool if_AVX
         delete m;
 }
 
-
-void scene3_AoS()
-{
-    Renderer renderer;
-    matrix camera;
-    Light L{
-        vec4(0.f, 1.f, 1.f, 0.f),
-        colour(1.0f, 1.0f, 1.0f),
-        colour(0.2f, 0.2f, 0.2f)
-    };
-
-    constexpr int NX = 20;
-    constexpr int NY = 10;
-    constexpr int NZ = 20;
-    constexpr float SPACING = 2.5f;
-
-    std::vector<Mesh*> scene;
-    scene.reserve(NX * NY * NZ);
-
-    // ----------------------------
-    // Create massive cube grid
-    // ----------------------------
-    for (int z = 0; z < NZ; ++z)
-    {
-        for (int y = 0; y < NY; ++y)
-        {
-            for (int x = 0; x < NX; ++x)
-            {
-                Mesh* m = new Mesh();
-                *m = Mesh::makeCube(1.f);
-
-                float px = (x - NX * 0.5f) * SPACING;
-                float py = (y - NY * 0.5f) * SPACING;
-                float pz = -z * SPACING;
-
-                m->world =
-                    matrix::makeTranslation(px, py, pz) *
-                    makeRandomRotation();
-
-                scene.push_back(m);
-            }
-        }
-    }
-
-    float zoffset = 5.f;
-    float speed = 0.25f;
-
-    auto start = std::chrono::high_resolution_clock::now();
-    int frame = 0;
-
-    L.omega_i.normalise();
-
-    while (!renderer.canvas.keyPressed(VK_ESCAPE))
-    {
-        renderer.canvas.checkInput();
-        renderer.clear();
-
-        // Camera flies through geometry
-        camera = matrix::makeTranslation(0, 0, -zoffset);
-        zoffset += speed;
-
-        // Continuous animation (avoid static transforms)
-        for (auto& m : scene)
-        {
-            m->world = m->world * matrix::makeRotateXYZ(0.01f, 0.02f, 0.015f);
-            //render_transfirst(renderer, m, camera, L);
-            render(renderer, m, camera, L);
-        }
-
-        renderer.present();
-
-        if (++frame % 120 == 0)
-        {
-            auto now = std::chrono::high_resolution_clock::now();
-            std::cout << "AoS 120 frames: "
-                << std::chrono::duration<double, std::milli>(now - start).count()
-                << " ms\n";
-            start = now;
-        }
-
-        if (zoffset > NZ * SPACING)
-            zoffset = 0.f;
-    }
-
-    for (auto& m : scene)
-        delete m;
-}
-
-void scene3_SoA()
-{
-    Renderer renderer;
-    matrix camera;
-    Light L{
-        vec4(0.f, 1.f, 1.f, 0.f),
-        colour(1.0f, 1.0f, 1.0f),
-        colour(0.2f, 0.2f, 0.2f)
-    };
-
-    constexpr int NX = 20;
-    constexpr int NY = 10;
-    constexpr int NZ = 20;
-    constexpr float SPACING = 2.5f;
-
-    std::vector<Mesh_SoA*> scene;
-    scene.reserve(NX * NY * NZ);
-
-    // ----------------------------
-    // Create massive cube grid
-    // ----------------------------
-    for (int z = 0; z < NZ; ++z)
-    {
-        for (int y = 0; y < NY; ++y)
-        {
-            for (int x = 0; x < NX; ++x)
-            {
-                Mesh_SoA* m = new Mesh_SoA();
-                *m = Mesh_SoA::makeCube(1.f);
-
-                float px = (x - NX * 0.5f) * SPACING;
-                float py = (y - NY * 0.5f) * SPACING;
-                float pz = -z * SPACING;
-
-                m->world =
-                    matrix::makeTranslation(px, py, pz) *
-                    makeRandomRotation();
-
-                scene.push_back(m);
-            }
-        }
-    }
-
-    float zoffset = 5.f;
-    float speed = 0.25f;
-
-    auto start = std::chrono::high_resolution_clock::now();
-    int frame = 0;
-
-    L.omega_i.normalise();
-
-    while (!renderer.canvas.keyPressed(VK_ESCAPE))
-    {
-        renderer.canvas.checkInput();
-        renderer.clear();
-
-        camera = matrix::makeTranslation(0, 0, -zoffset);
-        zoffset += speed;
-
-        for (auto& m : scene)
-        {
-            m->world = m->world * matrix::makeRotateXYZ(0.01f, 0.02f, 0.015f);
-
-            // 核心测试点
-            render_transfirst_SoA_AVX2_Optimized(renderer, m, camera, L);
-        }
-
-        renderer.present();
-
-        if (++frame % 120 == 0)
-        {
-            auto now = std::chrono::high_resolution_clock::now();
-            std::cout << "SoA AVX2 120 frames: "
-                << std::chrono::duration<double, std::milli>(now - start).count()
-                << " ms\n";
-            start = now;
-        }
-
-        if (zoffset > NZ * SPACING)
-            zoffset = 0.f;
-    }
-
-    for (auto& m : scene)
-        delete m;
-}
-
-void scene4(bool if_trans_first = false, bool if_AVX = false)
+void scene3(bool if_trans_first = false, bool if_AVX = false)
 {
     Renderer renderer;
     matrix camera = matrix::makeIdentity();
@@ -1262,7 +1089,6 @@ void scene4(bool if_trans_first = false, bool if_AVX = false)
     int cycle = 0;
 
     bool running = true;
-    float angle = 0.f;
 
     while (running)
     {
@@ -1271,8 +1097,6 @@ void scene4(bool if_trans_first = false, bool if_AVX = false)
 
         if (renderer.canvas.keyPressed(VK_ESCAPE))
             break;
-
-        angle += 0.01f;
 
         // Animate only top row
         for (int i = 0; i < 3; ++i)
@@ -1306,9 +1130,8 @@ void scene4(bool if_trans_first = false, bool if_AVX = false)
         if (++cycle % 120 == 0)
         {
             end = std::chrono::high_resolution_clock::now();
-            std::cout << cycle / 120 << " :" << "[AoS] "
-                << std::chrono::duration<double, std::milli>(end - start).count()
-                << " ms\n";
+            //std::cout << cycle / 120 << " :" << "[AoS] " << std::chrono::duration<double, std::milli>(end - start).count()  << " ms\n";
+            std::cout << std::chrono::duration<double, std::milli>(end - start).count()  << "\n";
             start = std::chrono::high_resolution_clock::now();
         }
     }
@@ -1317,7 +1140,7 @@ void scene4(bool if_trans_first = false, bool if_AVX = false)
         delete m;
 }
 
-void scene4_SoA(bool if_trans_first = false, bool if_AVX = false, bool if_AVX_at_transf = false)
+void scene3_SoA(bool if_trans_first = false, bool if_AVX = false, bool if_AVX_at_transf = false)
 {
     Renderer renderer;
     matrix camera = matrix::makeIdentity();
@@ -1393,9 +1216,8 @@ void scene4_SoA(bool if_trans_first = false, bool if_AVX = false, bool if_AVX_at
         if (++cycle % 120 == 0)
         {
             end = std::chrono::high_resolution_clock::now();
-            std::cout << cycle / 120 << " :" << "[SoA SIMD] "
-                << std::chrono::duration<double, std::milli>(end - start).count()
-                << " ms\n";
+            //std::cout << cycle / 120 << " :" << "[SoA SIMD] "<< std::chrono::duration<double, std::milli>(end - start).count()  << " ms\n";
+            std::cout << std::chrono::duration<double, std::milli>(end - start).count() << "\n";
             start = std::chrono::high_resolution_clock::now();
         }
     }
@@ -1403,7 +1225,7 @@ void scene4_SoA(bool if_trans_first = false, bool if_AVX = false, bool if_AVX_at
     for (auto& m : scene)
         delete m;
 }
-void scene4_SoA_MT(bool if_trans_first = false, bool if_AVX = false, bool if_AVX_at_transf = false)
+void scene3_SoA_MT(int thread_num)
 {
     Renderer renderer;
     matrix camera = matrix::makeIdentity();
@@ -1412,8 +1234,8 @@ void scene4_SoA_MT(bool if_trans_first = false, bool if_AVX = false, bool if_AVX
     L.omega_i.normalise();
 
     std::vector<Mesh_SoA*> scene;
-    ThreadPool threads;
-    RendererSOA_MT renderer_mt(renderer.canvas.getWidth(), renderer.canvas.getHeight());
+    ThreadPool threads(thread_num);
+    RendererSOA_MT renderer_mt(renderer.canvas.getWidth(), renderer.canvas.getHeight(), threads);
 
     constexpr int LAT = 40;
     constexpr int LON = 80;
@@ -1455,9 +1277,9 @@ void scene4_SoA_MT(bool if_trans_first = false, bool if_AVX = false, bool if_AVX
         // SIMD render path
         for (auto& m : scene)
         {
-            //renderer_mt.renderScene_SoA_Optimized_MT(renderer, threads, *m, camera, L, m->ka, m->kd);
+            renderer_mt.renderScene_SoA_Optimized_MT(renderer, threads, *m, camera, L, m->ka, m->kd);
             //renderer_mt.renderScene_SoA_Optimized(renderer, threads, *m, camera, L, m->ka, m->kd);
-            renderer_mt.renderScene_SoA_Optimized_ST(renderer, *m, camera, L, m->ka, m->kd);
+            //renderer_mt.renderScene_SoA_Optimized_ST(renderer, *m, camera, L, m->ka, m->kd);
         }
 
         renderer.present();
@@ -1466,6 +1288,7 @@ void scene4_SoA_MT(bool if_trans_first = false, bool if_AVX = false, bool if_AVX
         {
             end = std::chrono::high_resolution_clock::now();
             std::cout << cycle / 120 << " :" << "[SoA SIMD MT] " << std::chrono::duration<double, std::milli>(end - start).count() << " ms\n";
+            //std::cout << std::chrono::duration<double, std::milli>(end - start).count() << "\n";
             start = std::chrono::high_resolution_clock::now();
         }
     }
@@ -1486,31 +1309,30 @@ int main() {
     // if using SIMD AVX2 when transform all vertexs (only for SoA structure)
     bool if_AVX_at_transf = true;
 
+    int thread_num = 8;
+
     //sceneTest(); 
     
-    //
+    //scene1();
     //scene1(if_trans_first, if_AVX);
 
     //scene1_SoA(if_trans_first, if_AVX, if_AVX_at_transf);
     // always use transform vertexs first and SIMD
-    //scene1_SoA_MT();
+    scene1_SoA_MT(thread_num);
 
     //scene2();
     //scene2(if_trans_first, if_AVX);
 
     //scene2_SoA(if_trans_first, if_AVX, if_AVX_at_transf);
     // always use transform vertexs first and SIMD
-    //scene2_SoA_MT();
+    //scene2_SoA_MT(thread_num);
 
-    //scene3_AoS();
-    //scene3_SoA();
-    
 
-    //scene4();
-    //scene4(if_trans_first, if_AVX);
+    //scene3();
+    //scene3(if_trans_first, if_AVX);
     
-    //scene4_SoA(if_trans_first, if_AVX, if_AVX_at_transf);
-    scene4_SoA_MT();
+    //scene3_SoA(if_trans_first, if_AVX, if_AVX_at_transf);
+    //scene3_SoA_MT(thread_num);
 
     return 0;
 }

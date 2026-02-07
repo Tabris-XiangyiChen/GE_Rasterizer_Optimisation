@@ -343,8 +343,8 @@ public:
 
 class RendererSOA_MT {
 private:
-    static constexpr int TILE_WIDTH = 1024;
-    static constexpr int TILE_HEIGHT = 96; 
+    int TILE_WIDTH;
+    int TILE_HEIGHT; 
     std::vector<Tile> tiles;
     int tiles_x, tiles_y;
     //bool if_multhread;
@@ -353,8 +353,12 @@ private:
     
 public:
 
-    RendererSOA_MT(int canvas_width, int canvas_height)
+    RendererSOA_MT(int canvas_width, int canvas_height, ThreadPool& pool) 
+        //: TILE_WIDTH(256), TILE_HEIGHT(384)
+        : TILE_WIDTH(1024), TILE_HEIGHT(96)
     {
+        TILE_HEIGHT = canvas_height / pool.getThreadCount();
+        
         // caculate tiles count
         tiles_x = (canvas_width + TILE_WIDTH - 1) / TILE_WIDTH;
         tiles_y = (canvas_height + TILE_HEIGHT - 1) / TILE_HEIGHT;
@@ -603,6 +607,7 @@ public:
 
         // set the per thread triangle manully, avoid passing too few triangles 
         //const int tri_chunk = 1024;
+        tri_chunk = triCount / thread_count;
         const int binning_threads = std::min(thread_count, (triCount + tri_chunk - 1) / tri_chunk);
        
         // binning
