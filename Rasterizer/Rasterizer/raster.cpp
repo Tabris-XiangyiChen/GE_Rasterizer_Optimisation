@@ -1301,6 +1301,8 @@ void scene3_SoA_MT(int thread_num)
 // No input variables
 int main() {
     // Uncomment the desired scene function to run
+    //If want change the basic caculate mode,
+    // Open Types.h can change.
 
     // if using transform all vertexs before draw
     bool if_trans_first = true;
@@ -1316,9 +1318,9 @@ int main() {
     //scene1();
     //scene1(if_trans_first, if_AVX);
 
-    //scene1_SoA(if_trans_first, if_AVX, if_AVX_at_transf);
+    scene1_SoA(if_trans_first, if_AVX, if_AVX_at_transf);
     // always use transform vertexs first and SIMD
-    scene1_SoA_MT(thread_num);
+    //scene1_SoA_MT(thread_num);
 
     //scene2();
     //scene2(if_trans_first, if_AVX);

@@ -138,7 +138,6 @@
   <ItemGroup>
     <ClInclude Include="colour.h" />
     <ClInclude Include="GamesEngineeringBase.h" />
-    <ClInclude Include="Header.h" />
     <ClInclude Include="light.h" />
     <ClInclude Include="matrix_opt.h" />
     <ClInclude Include="matrix.h" />
