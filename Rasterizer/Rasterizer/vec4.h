@@ -1,0 +1,177 @@
+﻿#pragma once
+
+#include <iostream>
+#include <immintrin.h>
+
+// The `vec4` class represents a 4D vector and provides operations such as scaling, addition, subtraction, 
+// normalization, and vector products (dot and cross).
+class alignas(16) vec4 {
+public:
+    union {
+        struct {
+            float x, y, z, w; // Components of the vector
+        };
+        float v[4];           // Array representation of the vector components
+    };
+
+public:
+    // Constructor to initialize the vector with specified values.
+    // Default values: x = 0, y = 0, z = 0, w = 1.
+    // Input Variables:
+    // - _x: X component of the vector
+    // - _y: Y component of the vector
+    // - _z: Z component of the vector
+    // - _w: W component of the vector (default is 1.0)
+    vec4(float _x = 0.f, float _y = 0.f, float _z = 0.f, float _w = 1.f)
+        : x(_x), y(_y), z(_z), w(_w) {}
+
+    // Displays the components of the vector in a readable format.
+    void display() {
+        std::cout << x << '\t' << y << '\t' << z << '\t' << w << std::endl;
+    }
+
+    // Scales the vector by a scalar value.
+    // Input Variables:
+    // - scalar: Value to scale the vector by
+    // Returns a new scaled `vec4`.
+    vec4 operator*(float scalar) const {
+        return { x * scalar, y * scalar, z * scalar, w * scalar };
+    }
+
+    // Divides the vector by its W component and sets W to 1.
+    // Useful for normalizing the W component after transformations.
+    //void divideW() {
+    //    x /= w;
+    //    y /= w;
+    //    z /= w;
+    //    w = 1.f;
+    //}
+    void divideW() {
+        float inv_w = 1 / w;
+        x *= inv_w;
+        y *= inv_w;
+        z *= inv_w;
+        w = 1.f;
+    }
+
+    // Accesses a vector component by index.
+    // Input Variables:
+    // - index: Index of the component (0 for x, 1 for y, 2 for z, 3 for w)
+    // Returns a reference to the specified component.
+    float& operator[](const unsigned int index) {
+        return v[index];
+    }
+
+    // Accesses a vector component by index (const version).
+    // Input Variables:
+    // - index: Index of the component (0 for x, 1 for y, 2 for z, 3 for w)
+    // Returns the specified component value.
+    const float& operator[](const unsigned int index) const {
+        return v[index];
+    }
+
+    // Subtracts another vector from this vector.
+    // Input Variables:
+    // - other: The vector to subtract
+    // Returns a new `vec4` resulting from the subtraction.
+    vec4 operator-(const vec4& other) const {
+        return vec4(x - other.x, y - other.y, z - other.z, 0.0f);
+    }
+    // Opt: SIMD SSE
+    //vec4 operator-(const vec4& other) const {
+    //    vec4 result;
+    //    __m128 a = _mm_load_ps(this->v);
+    //    __m128 b = _mm_load_ps(other.v);
+    //    __m128 r = _mm_sub_ps(a, b);
+    //    _mm_store_ps(result.v, r);
+    //    return result;
+    //}
+    vec4 operator-() const {
+        return vec4(-x, -y, -z, -w);
+    }
+
+    // Adds another vector to this vector.
+    // Input Variables:
+    // - other: The vector to add
+    // Returns a new `vec4` resulting from the addition.
+    vec4 operator+(const vec4& other) const {
+        return vec4(x + other.x, y + other.y, z + other.z, 0.0f);
+    }
+    // Opt: SIMD SSE
+    //vec4 operator+(const vec4& other) const {
+    //    vec4 result;
+    //    __m128 a = _mm_load_ps(this->v);     // aligned load
+    //    __m128 b = _mm_load_ps(other.v);
+    //    __m128 r = _mm_add_ps(a, b);
+    //    _mm_store_ps(result.v, r);
+    //    return result;
+    //}
+
+    // Opt: Add equal
+    vec4& operator+=(const vec4& other) {
+        x += other.x;
+        y += other.y;
+        z += other.z;
+        w = 0.0f;
+        return *this;
+    }
+    // Opt: SIMD SSE
+    //vec4& operator+=(const vec4& other) {
+    //    __m128 a = _mm_load_ps(this->v);
+    //    __m128 b = _mm_load_ps(other.v);
+    //    a = _mm_add_ps(a, b);
+    //    _mm_store_ps(this->v, a);
+    //    return *this;
+    //}
+
+
+
+    // Computes the cross product of two vectors.
+    // Input Variables:
+    // - v1: The first vector
+    // - v2: The second vector
+    // Returns a new `vec4` representing the cross product.
+    static vec4 cross(const vec4& v1, const vec4& v2) {
+        return vec4(
+            v1.y * v2.z - v1.z * v2.y,
+            v1.z * v2.x - v1.x * v2.z,
+            v1.x * v2.y - v1.y * v2.x,
+            0.0f // The W component is set to 0 for cross products
+        );
+    }
+
+    // Computes the dot product of two vectors.
+    // Input Variables:
+    // - v1: The first vector
+    // - v2: The second vector
+    // Returns the dot product as a float.
+    static float dot(const vec4& v1, const vec4& v2) {
+        return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z);
+    }
+    // Opt: SIMD SSE
+    //static float dot(const vec4& v1, const vec4& v2)
+    //{
+    //    __m128 a = _mm_load_ps(v1.v);
+    //    __m128 b = _mm_load_ps(v2.v);
+    //    __m128 dot = _mm_dp_ps(a, b, 0x71);
+    //    float ndot1 = _mm_cvtss_f32(dot);
+    //    return ndot1;
+    //}
+
+    // Normalizes the vector to make its length equal to 1.
+    // This operation does not affect the W component.
+    //void normalise() {
+    //    float length = std::sqrt(x * x + y * y + z * z);
+    //    x /= length;
+    //    y /= length;
+    //    z /= length;
+    //}
+    // Opt:
+    void normalise() {
+        float length = std::sqrt(x * x + y * y + z * z);
+        float invlength = 1 / length;
+        x *= invlength;
+        y *= invlength;
+        z *= invlength;
+    }
+};
